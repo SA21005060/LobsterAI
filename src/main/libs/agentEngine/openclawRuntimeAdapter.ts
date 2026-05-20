@@ -10,7 +10,7 @@ import { t } from '../../i18n';
 import type { SubagentRunStore } from '../../subagentRunStore';
 import { getCommandDangerLevel,isDeleteCommand } from '../commandSafety';
 import { setCoworkProxySessionId } from '../coworkOpenAICompatProxy';
-import { extractOpenClawAssistantStreamText, extractOpenClawAssistantStreamParts } from '../openclawAssistantText';
+import { extractOpenClawAssistantStreamParts,extractOpenClawAssistantStreamText } from '../openclawAssistantText';
 import {
   buildManagedSessionKey,
   isManagedSessionKey,
