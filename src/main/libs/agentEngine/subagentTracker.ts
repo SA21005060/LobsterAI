@@ -174,18 +174,27 @@ export class SubagentTracker {
 
   /**
    * Called when backfill retrieves a sessions_spawn tool result text.
-   * Extracts childSessionKey if not already known.
+   * Extracts childSessionKey if not already known and detects error status.
    */
   onBackfillResult(toolCallId: string, text: string): void {
     if (!this.subagentToolCallIdToAgentId.has(toolCallId)) return;
-    if (this.subagentSessionKeys.has(toolCallId)) return;
+    const alreadyHasKey = this.subagentSessionKeys.has(toolCallId);
     try {
       const parsed = JSON.parse(text);
-      const childSessionKey = typeof parsed?.childSessionKey === 'string' ? parsed.childSessionKey : '';
-      if (childSessionKey) {
-        this.subagentSessionKeys.set(toolCallId, childSessionKey);
-        this.store.updateSubagentRunSessionKey(toolCallId, childSessionKey);
-        console.log('[SubagentTracker] session key from backfill:', toolCallId, childSessionKey);
+      // Extract session key if not yet known
+      if (!alreadyHasKey) {
+        const childSessionKey = typeof parsed?.childSessionKey === 'string' ? parsed.childSessionKey : '';
+        if (childSessionKey) {
+          this.subagentSessionKeys.set(toolCallId, childSessionKey);
+          this.store.updateSubagentRunSessionKey(toolCallId, childSessionKey);
+          console.log('[SubagentTracker] session key from backfill:', toolCallId, childSessionKey);
+        }
+      }
+      // Detect error status (spawn may have failed with a timeout)
+      if (parsed?.status === 'error' && this.subagentStatus.get(toolCallId) !== 'error') {
+        this.subagentStatus.set(toolCallId, 'error');
+        this.store.updateSubagentRunStatus(toolCallId, 'error', Date.now());
+        console.log('[SubagentTracker] subagent spawn failed (from backfill):', toolCallId, parsed.error);
       }
     } catch { /* not JSON */ }
   }

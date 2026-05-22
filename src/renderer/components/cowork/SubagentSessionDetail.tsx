@@ -64,20 +64,15 @@ const SubagentSessionDetail: React.FC<SubagentSessionDetailProps> = ({ subagent,
     void fetchHistory();
     void fetchStatus();
 
-    const timer = setInterval(() => {
-      void fetchHistory();
-      void fetchStatus();
-    }, 5000);
-
-    return () => clearInterval(timer);
-  }, [fetchHistory, fetchStatus]);
-
-  // Stop polling when done
-  useEffect(() => {
-    if (status === 'done') {
-      void fetchHistory();
+    // Only poll while subagent is still running
+    if (status === 'running') {
+      const timer = setInterval(() => {
+        void fetchHistory();
+        void fetchStatus();
+      }, 5000);
+      return () => clearInterval(timer);
     }
-  }, [status, fetchHistory]);
+  }, [fetchHistory, fetchStatus, status]);
 
   // Use agent name as title to avoid duplicating the task content shown in conversation
   const displayTitle = subagent.agentId ?? subagent.label ?? 'Subagent';
