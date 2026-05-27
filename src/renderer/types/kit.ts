@@ -5,15 +5,28 @@ export interface KitSkillRef {
   name: string;
 }
 
+export interface KitSkillBundle {
+  bundle: string;
+  list: KitSkillRef[];
+}
+
 export interface MarketplaceKit {
   id: string;
-  name: string;
+  name: string | LocalizedText;
   description: string | LocalizedText;
   icon?: string;
   author?: string;
   version?: string;
-  tryAsking?: string[];
-  skills?: KitSkillRef[];
-  mcpServers?: string[];
   downloadCount?: string;
+  tryAsking?: (string | LocalizedText)[];
+  skills?: KitSkillBundle;
+  mcpServers?: any;
+  connectors?: any;
+}
+
+export interface InstalledKit {
+  id: string;
+  version: string;
+  installedAt: number;
+  skillIds: string[];
 }

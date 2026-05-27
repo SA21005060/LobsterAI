@@ -90,6 +90,7 @@ import type {
   TelegramInstanceConfig,
   WecomInstanceConfig,
 } from './im/types';
+import { registerKitHandlers } from './ipcHandlers/kits';
 import { registerNimQrLoginHandlers } from './ipcHandlers/nimQrLogin';
 import { registerPluginHandlers } from './ipcHandlers/plugins';
 import {
@@ -138,6 +139,7 @@ import {
 } from './libs/coworkUtil';
 import { getPortalTasksUrl,
   getHtmlSharePublicBaseUrl,
+  getKitStoreUrl,
   getServerApiBaseUrl,
   getSkillStoreUrl,
   isTestModeEnabled,
@@ -4413,6 +4415,13 @@ if (!gotTheLock) {
     getSkillManager,
     getSkillStoreUrl,
     getOpenClawRuntimeAdapter: () => openClawRuntimeAdapter,
+  });
+
+  // Kits IPC handlers
+  registerKitHandlers({
+    getStore,
+    getKitStoreUrl,
+    getSkillManager,
   });
 
   ipcMain.handle('openclaw:engine:getStatus', async () => {
