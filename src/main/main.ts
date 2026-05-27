@@ -137,9 +137,10 @@ import {
   getElectronNodeRuntimePath,
   probeCoworkModelReadiness,
 } from './libs/coworkUtil';
-import { getPortalTasksUrl,
+import {
   getHtmlSharePublicBaseUrl,
   getKitStoreUrl,
+  getPortalTasksUrl,
   getServerApiBaseUrl,
   getSkillStoreUrl,
   isTestModeEnabled,
