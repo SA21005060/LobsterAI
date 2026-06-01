@@ -346,10 +346,11 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   const useHomeContextLayout = isLarge && showAgentSelector;
   const useCompactSendButton = isLarge && (useHomeContextLayout || showReadOnlyContext);
   const hasActiveContext = hasActiveSkills || hasActiveKits;
+  const hasAttachments = attachments.length > 0;
   const minHeight = isLarge
     ? useHomeContextLayout
-      ? hasActiveContext ? 36 : 52
-      : hasActiveContext ? 44 : 60
+      ? hasAttachments ? 34 : hasActiveContext ? 36 : 52
+      : hasAttachments ? 38 : hasActiveContext ? 44 : 60
     : 24;
   const maxHeight = isLarge ? 200 : 200;
 
@@ -1185,7 +1186,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     void handleIncomingFiles(files);
   }, [disabled, handleIncomingFiles, isStreaming]);
 
-  const canSubmit = !disabled && !isPatchingModel && !agentModelIsInvalid && (!!value.trim() || attachments.length > 0);
+  const canSubmit = !disabled && !isPatchingModel && !agentModelIsInvalid && (!!value.trim() || hasAttachments);
   const enhancedContainerClass = isDraggingFiles
     ? `${containerClass} ring-2 ring-primary/50 border-primary/60`
     : containerClass;
@@ -1426,6 +1427,34 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     </button>
   );
 
+  const attachmentPreviewContent = hasAttachments ? (
+    <div className="flex flex-wrap gap-2">
+      {attachments.map((attachment) => {
+        const ml = mediaLabels.find(m => m.attachment.path === attachment.path);
+        return (
+          <AttachmentCard
+            key={attachment.path}
+            attachment={attachment}
+            onRemove={handleRemoveAttachment}
+            label={ml?.label}
+          />
+        );
+      })}
+    </div>
+  ) : null;
+
+  const largeAttachmentPreview = hasAttachments ? (
+    <div className="max-h-[156px] overflow-y-auto px-4 pb-1 pt-3">
+      {attachmentPreviewContent}
+    </div>
+  ) : null;
+
+  const compactAttachmentPreview = hasAttachments ? (
+    <div className="mb-2 max-h-[164px] overflow-y-auto rounded-xl bg-black/[0.035] p-2 dark:bg-white/[0.055]">
+      {attachmentPreviewContent}
+    </div>
+  ) : null;
+
   const activeSkillContextRow = isLarge && hasActiveContext ? (
     <div
       className="flex cursor-text flex-wrap items-center gap-x-2 gap-y-1 px-4 pt-4"
@@ -1550,23 +1579,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
 
   return (
     <div className="relative">
-      {attachments.length > 0 && (
-        <div className="mb-2 max-h-[164px] overflow-y-auto rounded-xl bg-black/[0.035] p-2 dark:bg-white/[0.055]">
-          <div className="flex flex-wrap gap-2">
-            {attachments.map((attachment) => {
-              const ml = mediaLabels.find(m => m.attachment.path === attachment.path);
-              return (
-                <AttachmentCard
-                  key={attachment.path}
-                  attachment={attachment}
-                  onRemove={handleRemoveAttachment}
-                  label={ml?.label}
-                />
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {!isLarge && compactAttachmentPreview}
       {imageVisionHint && (
         <div className="mb-2 flex items-start gap-1.5 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-2.5 py-1.5 text-xs text-amber-700 dark:text-amber-400">
           <ExclamationTriangleIcon className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
@@ -1598,6 +1611,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
           useHomeContextLayout ? (
             <>
               <div className="relative z-10 rounded-2xl border border-border bg-surface shadow-card">
+                {largeAttachmentPreview}
                 {activeSkillContextRow}
                 {renderMentionTextarea({
                   rows: 2,
@@ -1703,6 +1717,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
             </>
           ) : (
             <>
+              {largeAttachmentPreview}
               {activeSkillContextRow}
               {renderMentionTextarea({
                 rows: 2,
