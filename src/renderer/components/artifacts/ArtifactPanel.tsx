@@ -875,8 +875,9 @@ const ArtifactPanel: React.FC<ArtifactPanelProps> = ({
   }, []);
 
   const formatShareClipboardText = useCallback((url: string, shareCode?: string): string => {
-    if (!shareCode) return url;
-    return `${t('htmlShareLink')}: ${url}\n${t('htmlShareCode')}: ${shareCode}`;
+    const linkLine = `${t('htmlShareClipboardLinkLabel')}: ${url}`;
+    if (!shareCode) return linkLine;
+    return `${linkLine}\n${t('htmlShareCode')}: ${shareCode}`;
   }, []);
 
   const showHtmlShareCopyStatus = useCallback((status: HtmlShareCopyStatus) => {
@@ -1759,7 +1760,7 @@ const ArtifactPanel: React.FC<ArtifactPanelProps> = ({
                     <button
                       type="button"
                       onClick={() =>
-                        handleCopyShareLink(htmlShareDialog.url)
+                        handleCopyShareLink(htmlShareDialog.url, htmlShareDialog.shareCode)
                       }
                       className={`w-28 rounded-lg px-5 py-2 text-base transition-colors ${
                         htmlShareCopyStatus === HtmlShareCopyStatus.Failed
