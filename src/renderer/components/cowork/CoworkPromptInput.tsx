@@ -206,7 +206,7 @@ interface CoworkPromptInputProps {
   isStreaming?: boolean;
   placeholder?: string;
   disabled?: boolean;
-  size?: 'normal' | 'large';
+  size?: 'normal' | 'large' | 'compact';
   workingDirectory?: string;
   onWorkingDirectoryChange?: (dir: string) => void;
   showFolderSelector?: boolean;
@@ -394,17 +394,20 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     engine: coworkAgentEngine,
   });
 
-  const isLarge = size === 'large';
+  const isCompact = size === 'compact';
+  const isLarge = size === 'large' || isCompact;
   const useHomeContextLayout = isLarge && showAgentSelector;
-  const useCompactSendButton = isLarge && (useHomeContextLayout || showReadOnlyContext);
+  const useCompactSendButton = isLarge && (useHomeContextLayout || showReadOnlyContext || isCompact);
   const hasActiveContext = hasActiveSkills || hasActiveKits;
   const hasAttachments = attachments.length > 0;
-  const minHeight = isLarge
-    ? useHomeContextLayout
-      ? hasAttachments ? 34 : hasActiveContext ? 36 : 52
-      : hasAttachments ? 38 : hasActiveContext ? 44 : 60
-    : 24;
-  const maxHeight = isLarge ? 200 : 200;
+  const minHeight = isCompact
+    ? hasAttachments ? 30 : hasActiveContext ? 30 : 28
+    : isLarge
+      ? useHomeContextLayout
+        ? hasAttachments ? 34 : hasActiveContext ? 36 : 52
+        : hasAttachments ? 38 : hasActiveContext ? 44 : 60
+      : 24;
+  const maxHeight = isCompact ? 96 : 200;
 
   const effectiveSelectedModel = resolveEffectiveModel({
     sessionId,
@@ -933,13 +936,17 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     }
   };
 
-  const containerClass = isLarge
+  const containerClass = isCompact
+    ? 'relative rounded-2xl border border-border bg-surface shadow-subtle'
+    : isLarge
     ? useHomeContextLayout
       ? 'relative rounded-2xl'
       : `relative rounded-2xl border border-border bg-surface ${showReadOnlyContext ? '' : 'shadow-card'}`
     : 'relative flex items-end gap-2 p-3 rounded-xl border border-border bg-surface';
 
-  const textareaClass = isLarge
+  const textareaClass = isCompact
+    ? `w-full resize-none bg-transparent px-4 pb-1.5 text-[14px] leading-[20px] text-foreground placeholder:dark:text-foregroundSecondary/60 placeholder:text-secondary/60 focus:outline-none min-h-[${minHeight}px] max-h-[${maxHeight}px] ${hasActiveContext ? 'pt-1.5' : 'pt-2'}`
+    : isLarge
     ? `w-full resize-none bg-transparent px-4 pb-2 text-foreground placeholder:dark:text-foregroundSecondary/60 placeholder:text-secondary/60 focus:outline-none min-h-[${minHeight}px] max-h-[${maxHeight}px] ${
       useHomeContextLayout
         ? `${hasActiveContext ? 'pt-2' : 'pt-3'} text-[14px] leading-[22px]`
@@ -1538,13 +1545,13 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   ) : null;
 
   const largeAttachmentPreview = hasAttachments ? (
-    <div className="max-h-[156px] overflow-y-auto px-4 pb-1 pt-3">
+    <div className={`${isCompact ? 'max-h-[88px] px-3 pb-1 pt-2' : 'max-h-[156px] px-4 pb-1 pt-3'} overflow-y-auto`}>
       {attachmentPreviewContent}
     </div>
   ) : null;
 
   const selectedTextSnippetPreview = selectedTextSnippets.length > 0 ? (
-    <div className="px-4 pt-3">
+    <div className={`${isCompact ? 'px-3 pt-2' : 'px-4 pt-3'}`}>
       <SelectedTextSnippetBadge
         snippets={selectedTextSnippets}
         onRemove={(snippetId) => dispatch(removeDraftSelectedTextSnippet({ draftKey, snippetId }))}
@@ -1560,7 +1567,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
 
   const activeSkillContextRow = isLarge && hasActiveContext ? (
     <div
-      className="flex cursor-text flex-wrap items-center gap-x-2 gap-y-1 px-4 pt-4"
+      className={`flex cursor-text flex-wrap items-center gap-x-2 gap-y-1 px-4 ${isCompact ? 'pt-2' : 'pt-4'}`}
       onClick={() => {
         if (!disabled) textareaRef.current?.focus();
       }}
@@ -1828,7 +1835,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
               {selectedTextSnippetPreview}
               {activeSkillContextRow}
               {renderMentionTextarea({
-                rows: 2,
+                rows: isCompact ? 1 : 2,
                 placeholder: textareaPlaceholder,
                 style: { minHeight: `${minHeight}px` },
               })}
@@ -1841,7 +1848,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
                   onDismiss={() => setMentionPickerOpen(false)}
                 />
               )}
-              <div className="flex items-center justify-between gap-3 px-4 pb-2 pt-1.5">
+              <div className={`flex items-center justify-between gap-3 px-4 ${isCompact ? 'pb-1.5 pt-0.5' : 'pb-2 pt-1.5'}`}>
                 <div className="flex min-w-0 items-center gap-2 relative">
                   {showFolderSelector && (
                     <>
