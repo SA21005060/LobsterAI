@@ -3,6 +3,7 @@ export const HtmlShareIpc = {
   UpdateFromHtmlFile: 'htmlShare:updateFromHtmlFile',
   GetByHtmlFile: 'htmlShare:getByHtmlFile',
   UpdateStatus: 'htmlShare:updateStatus',
+  UpdateAccessMode: 'htmlShare:updateAccessMode',
   Disable: 'htmlShare:disable',
   Get: 'htmlShare:get',
 } as const;
@@ -17,6 +18,7 @@ export type HtmlShareSourceType = (typeof HtmlShareSourceType)[keyof typeof Html
 
 export const HtmlShareAccessMode = {
   Code: 'code',
+  Public: 'public',
 } as const;
 
 export type HtmlShareAccessMode = (typeof HtmlShareAccessMode)[keyof typeof HtmlShareAccessMode];

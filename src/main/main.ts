@@ -70,6 +70,7 @@ import {
 import { DialogIpc } from '../shared/dialog/constants';
 import {
   HtmlShareAccessMode,
+  type HtmlShareAccessMode as HtmlShareAccessModeValue,
   type HtmlShareConfigurableStatus,
   HtmlShareErrorCode,
   HtmlShareIpc,
@@ -210,6 +211,7 @@ import {
 import {
   getHtmlShareBySource,
   updateHtmlShare,
+  updateHtmlShareAccessMode,
   updateHtmlShareStatus,
   uploadHtmlShare,
 } from './libs/htmlShare/htmlShareClient';
@@ -373,6 +375,7 @@ interface HtmlShareCreateFromHtmlFileInput {
   artifactId: string;
   filePath: string;
   title: string;
+  accessMode?: HtmlShareAccessModeValue;
 }
 
 interface HtmlShareUpdateFromHtmlFileInput extends HtmlShareCreateFromHtmlFileInput {
@@ -387,6 +390,11 @@ interface HtmlShareGetByHtmlFileInput {
 interface HtmlShareUpdateStatusInput {
   shareId: string;
   status: HtmlShareConfigurableStatus;
+}
+
+interface HtmlShareUpdateAccessModeInput {
+  shareId: string;
+  accessMode: HtmlShareAccessModeValue;
 }
 
 function sanitizeHtmlShareString(
@@ -411,12 +419,16 @@ function sanitizeHtmlShareTitle(value: unknown): string {
   return sanitizeHtmlShareString(value, 'title', 255);
 }
 
-function validateHtmlShareAccessMode(value: unknown): void {
-  if (value === undefined) return;
+function sanitizeHtmlShareAccessMode(
+  value: unknown,
+  defaultValue?: HtmlShareAccessModeValue,
+): HtmlShareAccessModeValue | undefined {
+  if (value === undefined) return defaultValue;
   const accessMode = sanitizeHtmlShareString(value, 'accessMode', 32);
-  if (accessMode !== HtmlShareAccessMode.Code) {
-    throw new Error('accessMode must be code.');
+  if (accessMode !== HtmlShareAccessMode.Code && accessMode !== HtmlShareAccessMode.Public) {
+    throw new Error('accessMode must be code or public.');
   }
+  return accessMode;
 }
 
 function sanitizeHtmlShareConfigurableStatus(
@@ -448,12 +460,12 @@ function sanitizeCreateFromHtmlFileInput(input: unknown): HtmlShareCreateFromHtm
     throw new Error('Invalid HTML share request.');
   }
   const source = input as Record<string, unknown>;
-  validateHtmlShareAccessMode(source.accessMode);
   return {
     sessionId: sanitizeHtmlShareString(source.sessionId, 'sessionId', 128),
     artifactId: sanitizeHtmlShareString(source.artifactId, 'artifactId', 128),
     filePath: sanitizeHtmlShareString(source.filePath, 'filePath', 4096),
     title: sanitizeHtmlShareTitle(source.title),
+    accessMode: sanitizeHtmlShareAccessMode(source.accessMode, HtmlShareAccessMode.Code),
   };
 }
 
@@ -464,6 +476,7 @@ function sanitizeUpdateFromHtmlFileInput(input: unknown): HtmlShareUpdateFromHtm
     ...source,
     shareId: sanitizeHtmlShareString(record.shareId, 'shareId', 64),
     currentStatus: sanitizeHtmlShareStatus(record.currentStatus),
+    accessMode: sanitizeHtmlShareAccessMode(record.accessMode),
   };
 }
 
@@ -489,6 +502,21 @@ function sanitizeUpdateHtmlShareStatusInput(input: unknown): HtmlShareUpdateStat
   return {
     shareId: sanitizeHtmlShareString(source.shareId, 'shareId', 64),
     status,
+  };
+}
+
+function sanitizeUpdateHtmlShareAccessModeInput(input: unknown): HtmlShareUpdateAccessModeInput {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    throw new Error('Invalid HTML share access mode request.');
+  }
+  const source = input as Record<string, unknown>;
+  const accessMode = sanitizeHtmlShareAccessMode(source.accessMode);
+  if (!accessMode) {
+    throw new Error('accessMode is required.');
+  }
+  return {
+    shareId: sanitizeHtmlShareString(source.shareId, 'shareId', 64),
+    accessMode,
   };
 }
 
@@ -4612,7 +4640,7 @@ if (!gotTheLock) {
         `[HtmlShare] received HTML file share request for session ${options.sessionId} and artifact ${options.artifactId}`,
       );
       console.debug(
-        `[HtmlShare] HTML file share uses share-code access and source file ${options.filePath}`,
+        `[HtmlShare] HTML file share uses access mode ${options.accessMode ?? 'server-default'} and source file ${options.filePath}`,
       );
       const clientSourceKey = buildHtmlShareClientSourceKey(options.filePath);
       const packaged = await packageHtmlFile(options.filePath);
@@ -4632,6 +4660,7 @@ if (!gotTheLock) {
           artifactId: options.artifactId,
           title: options.title,
           entryFile: packaged.entryFile,
+          accessMode: options.accessMode,
           sourceSha256: packaged.sourceSha256,
         },
       );
@@ -4704,6 +4733,7 @@ if (!gotTheLock) {
           artifactId: options.artifactId,
           title: options.title,
           entryFile: packaged.entryFile,
+          accessMode: options.accessMode,
           sourceSha256: packaged.sourceSha256,
         },
       );
@@ -4745,6 +4775,25 @@ if (!gotTheLock) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to update share status',
+      };
+    }
+  });
+
+  ipcMain.handle(HtmlShareIpc.UpdateAccessMode, async (_event, input: unknown) => {
+    try {
+      const options = sanitizeUpdateHtmlShareAccessModeInput(input);
+      return await updateHtmlShareAccessMode(
+        getServerApiBaseUrl(),
+        getHtmlSharePublicBaseUrl(),
+        fetchWithAuth,
+        options.shareId,
+        options.accessMode,
+      );
+    } catch (error) {
+      console.error('[HtmlShare] failed to update share access mode:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to update share access mode',
       };
     }
   });
