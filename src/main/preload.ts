@@ -15,6 +15,7 @@ import { CoworkIpcChannel } from '../shared/cowork/constants';
 import { DataMigrationIpc } from '../shared/dataMigration/constants';
 import { DialogIpc } from '../shared/dialog/constants';
 import {
+  type HtmlShareAccessMode,
   type HtmlShareConfigurableStatus,
   HtmlShareIpc,
   type HtmlShareStatus,
@@ -590,6 +591,7 @@ contextBridge.exposeInMainWorld('electron', {
       artifactId: string;
       filePath: string;
       title: string;
+      accessMode?: HtmlShareAccessMode;
     }) => ipcRenderer.invoke(HtmlShareIpc.CreateFromHtmlFile, options),
     updateFromHtmlFile: (options: {
       shareId: string;
@@ -598,11 +600,14 @@ contextBridge.exposeInMainWorld('electron', {
       filePath: string;
       title: string;
       currentStatus?: HtmlShareStatus;
+      accessMode?: HtmlShareAccessMode;
     }) => ipcRenderer.invoke(HtmlShareIpc.UpdateFromHtmlFile, options),
     getByHtmlFile: (options: { filePath: string }) =>
       ipcRenderer.invoke(HtmlShareIpc.GetByHtmlFile, options),
     updateStatus: (options: { shareId: string; status: HtmlShareConfigurableStatus }) =>
       ipcRenderer.invoke(HtmlShareIpc.UpdateStatus, options),
+    updateAccessMode: (options: { shareId: string; accessMode: HtmlShareAccessMode }) =>
+      ipcRenderer.invoke(HtmlShareIpc.UpdateAccessMode, options),
     disable: (shareId: string) => ipcRenderer.invoke(HtmlShareIpc.Disable, shareId),
     get: (shareId: string) => ipcRenderer.invoke(HtmlShareIpc.Get, shareId),
   },

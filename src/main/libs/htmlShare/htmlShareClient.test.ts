@@ -12,6 +12,7 @@ import {
   buildHtmlSharePublicUrl,
   getHtmlShareBySource,
   updateHtmlShare,
+  updateHtmlShareAccessMode,
   updateHtmlShareStatus,
   uploadHtmlShare,
 } from './htmlShareClient';
@@ -78,13 +79,14 @@ describe('htmlShareClient', () => {
         artifactId: 'artifact-1',
         title: 'Preview',
         entryFile: 'index.html',
+        accessMode: HtmlShareAccessMode.Public,
         sourceSha256: 'hash',
       },
     );
 
     expect(requestedUrl).toBe('https://lobsterai-server.inner.youdao.com/api/html-shares');
     expect(requestedForm).not.toBeNull();
-    expect(requestedForm!.get('accessMode')).toBeNull();
+    expect(requestedForm!.get('accessMode')).toBe(HtmlShareAccessMode.Public);
     expect(result.success).toBe(true);
     expect(result.url).toBe('https://lobsterai-server.youdao.com/s/shr_test/');
     expect(result.shareCode).toBe('K7Q9P2');
@@ -117,6 +119,7 @@ describe('htmlShareClient', () => {
         clientSourceKey: 'source-key',
         title: 'Preview',
         entryFile: 'index.html',
+        accessMode: HtmlShareAccessMode.Code,
         sourceSha256: 'hash',
       },
     );
@@ -161,6 +164,7 @@ describe('htmlShareClient', () => {
         clientSourceKey: 'source-key',
         title: 'Preview',
         entryFile: 'index.html',
+        accessMode: HtmlShareAccessMode.Code,
         sourceSha256: 'hash',
       },
     );
@@ -168,9 +172,54 @@ describe('htmlShareClient', () => {
     expect(requestedUrl).toBe('https://lobsterai-server.inner.youdao.com/api/html-shares/shr_test');
     expect(requestedMethod).toBe('PUT');
     expect(requestedForm).not.toBeNull();
-    expect(requestedForm!.get('accessMode')).toBeNull();
+    expect(requestedForm!.get('accessMode')).toBe(HtmlShareAccessMode.Code);
     expect(result.success).toBe(true);
     expect(result.url).toBe('https://lobsterai-server.youdao.com/s/shr_test/');
+  });
+
+  test('updates share access mode without uploading files', async () => {
+    let requestedUrl = '';
+    let requestedMethod = '';
+    let requestedBody = '';
+    let requestedContentType = '';
+
+    const result = await updateHtmlShareAccessMode(
+      'https://lobsterai-server.inner.youdao.com',
+      'https://lobsterai-server.inner.youdao.com/s',
+      async (url, options) => {
+        requestedUrl = url;
+        requestedMethod = options?.method || '';
+        requestedBody = String(options?.body || '');
+        requestedContentType = String(
+          (options?.headers as Record<string, string>)?.['Content-Type'] || '',
+        );
+        return new Response(
+          JSON.stringify({
+            code: 0,
+            data: {
+              shareId: 'shr_test',
+              accessMode: HtmlShareAccessMode.Public,
+              status: HtmlShareStatus.Live,
+            },
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        );
+      },
+      'shr_test',
+      HtmlShareAccessMode.Public,
+    );
+
+    expect(requestedUrl).toBe(
+      'https://lobsterai-server.inner.youdao.com/api/html-shares/shr_test/access-mode',
+    );
+    expect(requestedMethod).toBe('PUT');
+    expect(requestedContentType).toBe('application/json');
+    expect(requestedBody).toBe(JSON.stringify({ accessMode: HtmlShareAccessMode.Public }));
+    expect(result.success).toBe(true);
+    expect(result.accessMode).toBe(HtmlShareAccessMode.Public);
   });
 
   test('updates an existing share status with PATCH', async () => {
