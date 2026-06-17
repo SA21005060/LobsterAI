@@ -76,6 +76,7 @@ import {
   type CoworkTextExportFormat as CoworkTextExportFormatValue,
   mergeCoworkTextExportMessages,
 } from './sessionExport';
+import UserMessageContent from './UserMessageContent';
 import UserMessageItem from './UserMessageItem';
 interface CoworkSessionDetailProps {
   onManageSkills?: () => void;
@@ -3489,16 +3490,19 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
                               : 'min-w-0 flex-1 px-1 py-1 text-foreground'
                           }
                         >
-                          <MarkdownContent
-                            content={item.content}
-                            className={
-                              item.role === 'user'
-                                ? 'max-w-none whitespace-pre-wrap break-words text-xs leading-5'
-                                : 'prose dark:prose-invert max-w-none text-xs leading-5'
-                            }
-                            resolveLocalFilePath={resolveLocalFilePath}
-                            showRevealInFolderAction={item.role === 'assistant'}
-                          />
+                          {item.role === 'user' ? (
+                            <UserMessageContent
+                              content={item.content}
+                              className="max-w-none text-xs leading-5"
+                            />
+                          ) : (
+                            <MarkdownContent
+                              content={item.content}
+                              className="prose dark:prose-invert max-w-none text-xs leading-5"
+                              resolveLocalFilePath={resolveLocalFilePath}
+                              showRevealInFolderAction
+                            />
+                          )}
                         </div>
                       </div>
                     ))}
