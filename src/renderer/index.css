@@ -80,6 +80,26 @@ blockquote {
   contain-intrinsic-size: 500px;
 }
 
+.artifact-preview-card-group {
+  background-color: #ffffff;
+}
+
+.dark .artifact-preview-card-group {
+  background-color: color-mix(in srgb, var(--lobster-surface) 55%, var(--lobster-background));
+}
+
+.artifact-preview-card-row {
+  background-color: transparent;
+}
+
+.artifact-preview-card-row:hover {
+  background-color: #fbfbfb;
+}
+
+.dark .artifact-preview-card-row:hover {
+  background-color: rgba(255, 255, 255, 0.035);
+}
+
 :root {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Helvetica Neue', 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.6;

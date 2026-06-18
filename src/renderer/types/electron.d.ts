@@ -20,6 +20,7 @@ import type {
 import type {
   HtmlShareAccessMode,
   HtmlShareConfigurableStatus,
+  HtmlShareDisabledSource,
   HtmlShareSourceType,
   HtmlShareStatus,
 } from '../../shared/htmlShare/constants';
@@ -368,6 +369,8 @@ interface HtmlShareResult {
   contentUpdatedAt?: string;
   disabledAt?: string | null;
   disabledReason?: string | null;
+  disabledSource?: HtmlShareDisabledSource | null;
+  restoredByUpdate?: boolean;
   error?: string;
   code?: number;
   warnings?: string[];
@@ -663,7 +666,7 @@ interface IElectronAPI {
     remoteManaged: (
       sessionId: string,
     ) => Promise<{ success: boolean; remoteManaged: boolean; error?: string }>;
-    listSessions: (options?: { limit?: number; offset?: number; agentId?: string }) => Promise<{
+    listSessions: (options?: { limit?: number; offset?: number; agentId?: string; searchQuery?: string }) => Promise<{
       success: boolean;
       sessions?: CoworkSessionSummary[];
       hasMore?: boolean;

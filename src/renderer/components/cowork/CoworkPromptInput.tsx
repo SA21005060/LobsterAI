@@ -101,6 +101,13 @@ const logPromptModelSelection = (
   window.electron?.log?.fromRenderer?.(level, 'CoworkPromptInput', message);
 };
 
+const summarizePromptShape = (prompt: string): string => {
+  const lines = prompt.length > 0 ? prompt.split('\n') : [];
+  const blankLines = lines.filter(line => line.trim().length === 0).length;
+  const orderedListLines = lines.filter(line => /^\s*\d+\.\s+/.test(line)).length;
+  return `chars=${prompt.length}, lines=${lines.length}, blankLines=${blankLines}, orderedListLines=${orderedListLines}`;
+};
+
 // CoworkAttachment is aliased from the Redux-persisted DraftAttachment type
 // so that attachment state survives view switches (cowork ↔ skills, etc.)
 type CoworkAttachment = DraftAttachment;
@@ -918,6 +925,11 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     const finalPrompt = trimmedValue
       ? (attachmentLines ? `${trimmedValue}\n\n${attachmentLines}` : trimmedValue)
       : attachmentLines;
+
+    logPromptModelSelection(
+      'debug',
+      `submitting prompt summary: ${summarizePromptShape(finalPrompt)}, attachments=${attachments.length}, imageAttachments=${imageAtts.length}`
+    );
 
     if (imageAtts.length > 0) {
       console.log('[CoworkPromptInput] handleSubmit: passing imageAtts to onSubmit', {
