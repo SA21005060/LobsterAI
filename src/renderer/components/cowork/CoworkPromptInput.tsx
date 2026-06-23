@@ -37,6 +37,7 @@ import {
   clearDraftAttachments,
   clearDraftSelectedTextSnippets,
   type DraftAttachment,
+  PlanConfirmationState,
   removeDraftSelectedTextSnippet,
   setDraftAttachments,
   setDraftCollaborationMode,
@@ -44,6 +45,7 @@ import {
   setDraftPrompt,
   setDraftSelectedTextSnippets,
   setDraftSkillIds,
+  setPlanConfirmationHandled,
   updateCurrentSessionModelOverride,
 } from '../../store/slices/coworkSlice';
 import { setActiveKitIds, toggleActiveKit } from '../../store/slices/kitSlice';
@@ -451,6 +453,9 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   const draftCollaborationMode = useSelector(
     (state: RootState) => state.cowork.draftCollaborationModes[draftKey] || CoworkCollaborationMode.Default
   );
+  const planConfirmation = useSelector(
+    (state: RootState) => state.cowork.planConfirmations[draftKey]
+  );
   const isPlanMode = draftCollaborationMode === CoworkCollaborationMode.Plan;
   const currentAgent = agents.find((agent) => agent.id === currentAgentId);
   const currentAgentSelectedModel = useAgentSelectedModel(currentAgentId, currentAgent?.model ?? '');
@@ -844,6 +849,9 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
 
     const exitsPlanModeForImplementation = isPlanMode
       && isPlanImplementationApproval(trimmedValue);
+    const awaitingPlanConfirmation = planConfirmation?.state === PlanConfirmationState.Awaiting
+      ? planConfirmation
+      : null;
     const effectivePlanMode = isPlanMode && !exitsPlanModeForImplementation;
     const effectiveCollaborationMode = effectivePlanMode
       ? CoworkCollaborationMode.Plan
@@ -1013,6 +1021,18 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
       effectiveCollaborationMode,
     );
     if (result === false) return;
+    if (awaitingPlanConfirmation) {
+      dispatch(setPlanConfirmationHandled({
+        sessionId: draftKey,
+        messageId: awaitingPlanConfirmation.messageId,
+      }));
+      logPromptModelSelection(
+        'debug',
+        exitsPlanModeForImplementation
+          ? `direct input confirmed proposed plan ${awaitingPlanConfirmation.messageId} for draft ${draftKey}`
+          : `direct input adjusted proposed plan ${awaitingPlanConfirmation.messageId} for draft ${draftKey}`,
+      );
+    }
     if (exitsPlanModeForImplementation) {
       dispatch(setDraftCollaborationMode({ draftKey, mode: CoworkCollaborationMode.Default }));
     }
@@ -1021,7 +1041,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     dispatch(clearDraftAttachments(draftKey));
     dispatch(clearDraftSelectedTextSnippets(draftKey));
     setImageVisionHint(false);
-  }, [value, isVoiceRecording, stopVoiceRecordingAndRecognize, isStreaming, disabled, isPatchingModel, onSubmit, activeSkillIds, skills, activeKitIds, marketplaceKits, installedKits, attachments, showFolderSelector, workingDirectory, dispatch, draftKey, effectiveSelectedModel?.id, modelSupportsImage, mediaLabels, selectedTextSnippets, resolveSubmitModelAccessPrompt, isPlanMode]);
+  }, [value, isVoiceRecording, stopVoiceRecordingAndRecognize, isStreaming, disabled, isPatchingModel, onSubmit, activeSkillIds, skills, activeKitIds, marketplaceKits, installedKits, attachments, showFolderSelector, workingDirectory, dispatch, draftKey, effectiveSelectedModel?.id, modelSupportsImage, mediaLabels, selectedTextSnippets, resolveSubmitModelAccessPrompt, isPlanMode, planConfirmation]);
 
   const handleSelectSkill = useCallback((skill: Skill) => {
     dispatch(toggleActiveSkill(skill.id));
@@ -1456,13 +1476,19 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
       draftKey,
       mode: nextMode,
     }));
+    if (nextMode === CoworkCollaborationMode.Default && planConfirmation?.state === PlanConfirmationState.Awaiting) {
+      dispatch(setPlanConfirmationHandled({
+        sessionId: draftKey,
+        messageId: planConfirmation.messageId,
+      }));
+    }
     if (nextMode === CoworkCollaborationMode.Plan) {
       void reportYdAnalyzer({
         action: LogReporterAction.PlanModeEnabled,
         entry: LogReporterEntry.PromptToolsMenu,
       });
     }
-  }, [dispatch, draftKey, isPlanMode]);
+  }, [dispatch, draftKey, isPlanMode, planConfirmation?.messageId, planConfirmation?.state]);
 
   const handleDisablePlanMode = useCallback((event?: React.MouseEvent) => {
     event?.stopPropagation();
@@ -1472,7 +1498,13 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
       draftKey,
       mode: CoworkCollaborationMode.Default,
     }));
-  }, [dispatch, draftKey, isPlanMode]);
+    if (planConfirmation?.state === PlanConfirmationState.Awaiting) {
+      dispatch(setPlanConfirmationHandled({
+        sessionId: draftKey,
+        messageId: planConfirmation.messageId,
+      }));
+    }
+  }, [dispatch, draftKey, isPlanMode, planConfirmation?.messageId, planConfirmation?.state]);
 
   const handleRemoveAttachment = useCallback((path: string) => {
     dispatch(setDraftAttachments({

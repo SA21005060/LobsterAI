@@ -47,6 +47,9 @@ const AssistantMessageItem: React.FC<{
   showCopyButton?: boolean;
   onFork?: (messageId: string) => void;
   turnMetadata?: CoworkMessageMetadata | null;
+  planConfirmationMessageId?: string | null;
+  onConfirmPlan?: (messageId: string) => void;
+  onAdjustPlan?: (messageId: string) => void;
 }> = ({
   message,
   resolveLocalFilePath,
@@ -54,6 +57,9 @@ const AssistantMessageItem: React.FC<{
   showCopyButton = false,
   onFork,
   turnMetadata,
+  planConfirmationMessageId,
+  onConfirmPlan,
+  onAdjustPlan,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [expandedImage, setExpandedImage] = useState<ImagePreviewSource | null>(null);
@@ -65,6 +71,7 @@ const AssistantMessageItem: React.FC<{
     proposedPlan.planText,
   ].filter((part): part is string => Boolean(part)).join('\n\n');
   const modelLabel = getMessageModelLabel(turnMetadata);
+  const showPlanConfirmationActions = planConfirmationMessageId === message.id;
   useEffect(() => {
     if (!proposedPlan.didNormalizePlanText) return;
     window.electron?.log?.fromRenderer?.(
@@ -129,6 +136,9 @@ const AssistantMessageItem: React.FC<{
               content={proposedPlan.planText}
               resolveLocalFilePath={resolveLocalFilePath}
               onImageClick={setExpandedImage}
+              showConfirmationActions={showPlanConfirmationActions}
+              onConfirmExecution={showPlanConfirmationActions ? () => onConfirmPlan?.(message.id) : undefined}
+              onAdjustPlan={showPlanConfirmationActions ? () => onAdjustPlan?.(message.id) : undefined}
             />
           </div>
         )}
